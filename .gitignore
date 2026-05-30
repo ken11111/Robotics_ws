@@ -10,6 +10,7 @@ data/
 *.csv
 *.log
 *.pcap
+MUJOCO_LOG.TXT
 
 # LeRobot SDK が pip install で取得した場合、ローカルキャッシュ
 lerobot/.cache/

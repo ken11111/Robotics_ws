@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "robotics-ws"
+version = "0.1.0"
+description = "LeRobot SO-ARM101 integration workspace (sim + real backends)"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  # [feetech] extras pulls scservo-sdk for STS3215 servo control.
+  # Required by the future RealBackend; harmless for sim-only use.
+  "lerobot[feetech]",
+  "mujoco",
+  "pyyaml",
+  "numpy",
+  "opencv-python",
+  "fastapi",
+  "uvicorn",
+]
+# Note: pyserial is no longer listed explicitly — lerobot[feetech] transitively
+# brings scservo-sdk which handles serial I/O. If a raw pyserial port is needed
+# outside lerobot, add it back here.
+
+[tool.hatch.build.targets.wheel]
+packages = ["so_arm101"]

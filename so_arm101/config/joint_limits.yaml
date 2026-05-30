@@ -1,0 +1,30 @@
+# SO-ARM101 Pro joint limits — 実機・シム共通の真実 source
+#
+# 値は MuJoCo Menagerie robotstudio_so101 v1.3 の so101.xml に揃えてある。
+# qpos 順序もこの順序 (shoulder_pan, shoulder_lift, elbow_flex,
+# wrist_flex, wrist_roll, gripper)。
+#
+# soft_limit.py (Phase X.4) はこの値の 95% を使って動作領域を制限する想定。
+# 実機 calibration.yaml はゼロ点オフセットのみ保持し、limit はここを参照。
+
+unit: rad
+
+joints:
+  - name: shoulder_pan
+    min: -1.91986
+    max:  1.91986
+  - name: shoulder_lift
+    min: -1.7453293
+    max:  1.7453293
+  - name: elbow_flex
+    min: -1.69
+    max:  1.69
+  - name: wrist_flex
+    min: -1.658063
+    max:  1.658063
+  - name: wrist_roll
+    min: -2.7438473
+    max:  2.7438473
+  - name: gripper
+    min: -0.174533
+    max:  1.7453292
