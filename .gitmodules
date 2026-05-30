@@ -1,3 +1,6 @@
 [submodule "so_arm101/sim/menagerie"]
 	path = so_arm101/sim/menagerie
 	url = https://github.com/google-deepmind/mujoco_menagerie.git
+[submodule "so_arm101/hardware"]
+	path = so_arm101/hardware
+	url = https://github.com/ken11111/SO-ARM100.git

@@ -68,7 +68,8 @@ Spresense 防犯カメラへの **LeRobot SO-ARM101 Pro 統合 (PTZ アーム追
 | `so_arm101/sim/scene.py` | MuJoCo シーン組立 (MjSpec) | ✅ |
 | `so_arm101/sim/backend.py` | `SimBackend(RobotBase)` | ✅ |
 | `so_arm101/sim/run_sim.py` | viewer 起動スクリプト | ✅ |
-| `so_arm101/sim/menagerie/` | git submodule (sparse: `robotstudio_so101` のみ) | ✅ |
+| `so_arm101/sim/menagerie/` | sim 用 — git submodule (sparse: `robotstudio_so101` のみ、`MuJoCo Menagerie` から) | ✅ |
+| `so_arm101/hardware/` | 実機ハード参照 — git submodule (sparse: SO101 関連のみ、`TheRobotStudio/SO-ARM100` fork から) | ✅ |
 | `so_arm101/real/backend.py` | `RealBackend(RobotBase)` — LeRobot `SOFollower` + `scservo-sdk` をラップ | ⏳ |
 | (find_port は CLI `lerobot-find-port` を使う方針、自作不要) | LeRobot 同梱 | ✅ (CLI として) |
 | `ptz_integration/tracking_controller.py` | Visual Servo PID + HTTP サーバ (Phase X.3-X.4) | ⏳ |
@@ -92,7 +93,9 @@ uv venv .venv --python 3.11
 source .venv/bin/activate
 uv pip install -e .          # lerobot[feetech] (= scservo-sdk 同梱), mujoco, etc.
 
-# 2. MuJoCo Menagerie (sparse: robotstudio_so101 のみ)
+# 2. submodules を取得
+#    - so_arm101/sim/menagerie/  (MuJoCo Menagerie sparse: robotstudio_so101)
+#    - so_arm101/hardware/       (SO-ARM100 fork sparse: SO101/Optional 関連)
 git submodule update --init --recursive
 
 # 3. 受け入れ確認
@@ -165,6 +168,31 @@ frame = robot.get_frame()           # external_cam の BGR 画像
 | `lerobot-find-cameras` | 接続済みカメラ列挙 |
 | `lerobot-info` / `lerobot-record` / `lerobot-eval` | 情報表示 / データ収集 / 評価 |
 
+### ハード参照 (`so_arm101/hardware/`)
+
+`TheRobotStudio/SO-ARM100` fork (`ken11111/SO-ARM100`) を sparse submodule で取得。**SO-101 関連のみ** に限定して 251 MB → working tree 157 MB に。
+
+| パス | 用途 |
+|---|---|
+| `Simulation/SO101/so101_new_calib.urdf` | ROS2 / MoveIt / pybullet 等で URDF が必要になった場合 |
+| `Simulation/SO101/so101_new_calib.xml` | Menagerie 派生元の **原典 MJCF** (シム調整内容を辿る際の比較用) |
+| `Simulation/SO101/joints_properties.xml` | サーボ ID・ホーム位置などの実機側パラメータ参照 |
+| `STL/SO101/` | 3D 印刷用モデル (実機部品を再印刷する場合) |
+| `STEP/SO101/` | CAD ソース (マウント穴位置の改造などが必要な場合) |
+| `Optional/` | グリッパー替え / カメラマウント (特に `Wrist_Cam_Mount_*`, `SO101_Wrist_Cam_Hex-Nut_Mount_32x32_UVC_Module`) |
+| `README.md`, `3DPRINT.md`, `SO100.md`, `CHANGELOG.md` | 組立手順・部品表 |
+
+スコープ外 (将来必要になれば `git sparse-checkout add` で足す): `Mini/`, `media/`, `STL/SO100`, `STL/Gauges`, `STEP/SO100`
+
+### sim と hardware の住み分け
+
+| 用途 | 参照先 |
+|---|---|
+| シミュレーション実行 | `so_arm101/sim/menagerie/robotstudio_so101/` (Menagerie 精製版) |
+| URDF / ROS 系 | `so_arm101/hardware/Simulation/SO101/*.urdf` |
+| 実機組立・3D 印刷 | `so_arm101/hardware/STL/SO101/` |
+| シム調整の出典確認 | `so_arm101/hardware/Simulation/SO101/so101_new_calib.xml` ↔ Menagerie 派生版 |
+
 ### 設計上の整合タスク (実機到着前に解決推奨)
 
 | 項目 | 内容 |
@@ -214,3 +242,4 @@ frame = robot.get_frame()           # external_cam の BGR 画像
 | 2026-05-27 | 初版 — スケルトン作成 (mkdir + README + .gitignore) |
 | 2026-05-30 | シム環境構築 — uv venv + LeRobot + MuJoCo Menagerie (robotstudio_so101)。`RobotBase` 抽象 + `SimBackend` 実装。`joint_limits.yaml` を実機・シム共通 source に設定。smoke test グリーン |
 | 2026-05-30 | 追加調査反映 — `lerobot[feetech]` extras 導入 (scservo-sdk 同梱)。LeRobot 0.4.4 の実 API (`SOFollower`, `lerobot-*` CLI) を README に記載。未検証項目を可視化 |
+| 2026-05-31 | 実機ハード参照を準備 — `so_arm101/hardware/` に `TheRobotStudio/SO-ARM100` fork を sparse submodule で追加 (SO101 関連のみ)。URDF / STL / STEP / Optional マウント類が参照可能に |
