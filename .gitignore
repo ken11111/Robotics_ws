@@ -1,0 +1,29 @@
+# Python 環境
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# データ・ログ (計測結果は git で持たない)
+data/
+*.csv
+*.log
+*.pcap
+
+# LeRobot SDK が pip install で取得した場合、ローカルキャッシュ
+lerobot/.cache/
+lerobot/wandb/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 一時ファイル
+*.tmp
+tmp/
