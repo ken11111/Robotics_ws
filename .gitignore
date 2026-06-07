@@ -28,3 +28,7 @@ Thumbs.db
 # 一時ファイル
 *.tmp
 tmp/
+
+# 実機キャリブレーション (個体差・実機所有者ごとに値が違うので git で持たない)
+# シンボリックリンクで ~/.cache/huggingface/lerobot/calibration/ を指す
+so_arm101/config/calibration.json

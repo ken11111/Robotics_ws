@@ -160,13 +160,20 @@ frame = robot.get_frame()           # external_cam の BGR 画像
 
 ### LeRobot CLI ツール (venv 有効化後そのまま実行可)
 
-| コマンド | 用途 |
-|---|---|
-| `lerobot-find-port` | USB-RS485 アダプタのポート検出 |
-| `lerobot-calibrate` | サーボのゼロ点・可動域キャリブレーション |
-| `lerobot-find-joint-limits` | 実機の物理可動域を測定 (→ `joint_limits.yaml` 更新) |
-| `lerobot-find-cameras` | 接続済みカメラ列挙 |
-| `lerobot-info` / `lerobot-record` / `lerobot-eval` | 情報表示 / データ収集 / 評価 |
+公式チュートリアル: `https://huggingface.co/docs/lerobot/so101` (`so_arm101/hardware/README.md` から参照)
+
+| 段階 | コマンド | 用途 |
+|---|---|---|
+| ① ポート検出 | `lerobot-find-port` | USB-RS485 アダプタの `/dev/tty*` を特定 |
+| ② サーボ ID 焼き込み | `lerobot-setup-motors --robot.type=so101_follower --robot.port=<PORT>` | 6 個のサーボに ID 1〜6 を割当 (1 個ずつ接続で進行) |
+| ③ ゼロ点キャリブ | `lerobot-calibrate --robot.type=so101_follower --robot.port=<PORT> --robot.id=<NAME>` | ホーム姿勢と可動域の基準を保存 |
+| ④ 物理可動域実測 | `lerobot-find-joint-limits --robot.type=so101_follower --robot.port=<PORT>` | 個体差を反映した joint limit を取得 |
+| カメラ列挙 | `lerobot-find-cameras` | 接続済みカメラ列挙 |
+| その他 | `lerobot-info` / `lerobot-record` / `lerobot-eval` / `lerobot-teleoperate` | 情報 / データ収集 / 評価 / テレオペ |
+
+**方針: 上記 CLI が公式の唯一正解。自作ラッパーは作らない。**
+本 ws の `so_arm101/real/` に置くのは `RealBackend(RobotBase)` の実装のみ。
+組立・キャリブの手順自体は LeRobot CLI と公式チュートリアルで完結する。
 
 ### ハード参照 (`so_arm101/hardware/`)
 
