@@ -179,10 +179,10 @@ def main() -> int:
     # 抽出表示 (30 行ぶん)
     step = max(1, len(records) // 30)
     print()
-    print(f"{'t[s]':>6} {'goal':>5} {'pres':>5} {'err':>+5} {'load':>+5}")
+    print(f"{'t[s]':>6} {'goal':>5} {'pres':>5} {'err':>5} {'load':>5}")
     for i in range(0, len(records), step):
         t, g, p, l = records[i]
-        print(f"{t:>6.2f} {g:>5} {p:>5} {g-p:>+5} {l:>+5}")
+        print(f"{t:>6.2f} {g:>5} {p:>5} {g - p:>+5} {l:>+5}")
 
     # 解釈ヒント
     print()
