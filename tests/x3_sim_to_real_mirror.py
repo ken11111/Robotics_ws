@@ -48,6 +48,12 @@ def main() -> int:
     parser.add_argument("--max-step-deg", type=float, default=2.0,
                         help="LeRobot 側の 1 step あたり最大 delta (deg)。"
                              "既定 2° × 30Hz = 60°/s 上限")
+    parser.add_argument("--acceleration", type=int, default=50,
+                        help="STS3215 Acceleration レジスタ (0..254)。"
+                             "小さいほど穏やかな加速 (既定 50、LeRobot 既定 254 を上書き)")
+    parser.add_argument("--settle-s", type=float, default=1.5,
+                        help="sweep 開始前の Goal=Present 保持時間 [s] "
+                             "(既定 1.5、初動の暴れを収めるための間)")
     parser.add_argument("--countdown-s", type=float, default=3.0,
                         help="起動前カウントダウン秒数")
     args = parser.parse_args()
@@ -61,6 +67,8 @@ def main() -> int:
     print(f"  loop rate         : {args.rate_hz} Hz")
     print(f"  max step (LeRobot): {args.max_step_deg}° = "
           f"{args.max_step_deg * args.rate_hz:.0f}°/s 角速度上限")
+    print(f"  acceleration      : {args.acceleration} (0..254, 小ほど穏やか)")
+    print(f"  settle            : {args.settle_s} s (sweep 前の Goal=Present 保持)")
     print()
     print("  □ アーム周囲のクリアランス OK か?")
     print("  □ 電源 SW が手元にあるか?")
@@ -79,6 +87,7 @@ def main() -> int:
         robot_id=args.robot_id,
         torque=True,
         max_relative_target=args.max_step_deg,
+        acceleration=args.acceleration,
     )
 
     # --- 初期姿勢の同期 (初動スティクション対策) ---
@@ -91,6 +100,7 @@ def main() -> int:
     # (a) 起動直後に Goal=Present で凍結 (= 即座に「保持」状態にする)
     # (b) sim の qpos を real の現在角に合わせる
     # (c) sin sweep を 0 ではなく real の現在角を中心に振る
+    # (d) settle_s 秒間 Goal=Present で待機 (急な動きを収める時間)
     # → どの関節も Goal が Present からスムーズに動き出す (dynamic_tracking
     #    と同じ初動パターン) = 初動時のスティクション/トルク不足を回避
     q_real_init = real.read_state()
@@ -98,6 +108,13 @@ def main() -> int:
     sim.data.qpos[: real.ARM_DOF] = q_real_init  # (b) sim 側も合わせる
     mujoco.mj_forward(sim.model, sim.data)
     sweep_center = q_real_init.copy()  # (c) 中心はここに
+
+    # (d) settle: 数フレームだけ Goal=Present を繰り返し送信して落ち着かせる
+    settle_steps = max(1, int(args.settle_s * args.rate_hz))
+    for _ in range(settle_steps):
+        real.apply_targets(q_real_init)
+        time.sleep(1.0 / args.rate_hz)
+    print(f"  settle 完了 ({args.settle_s:.1f}s)、sweep 開始")
 
     amp = np.deg2rad(args.amplitude_deg)
     omega = 2 * np.pi / args.period_s

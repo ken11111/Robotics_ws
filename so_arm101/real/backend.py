@@ -33,6 +33,9 @@ class RealBackend(RobotBase):
             False なら脱力 (read-only / 人が手で動かす)。既定 False。
         max_relative_target: 1 回の apply_targets で許す最大角度差 (deg)。
             None なら無制限。安全のためミラーデモでは 2〜5 度を推奨。
+        acceleration: STS3215 Acceleration レジスタ (0..254)。connect 直後に
+            全 motor へ上書き。LeRobot の configure_motors() は既定 254 (最大)
+            なので、安全のため 50 程度に下げる。0 = 無制限 (危険)。既定 50。
     """
 
     ARM_DOF = 6
@@ -43,6 +46,7 @@ class RealBackend(RobotBase):
         robot_id: str = DEFAULT_ROBOT_ID,
         torque: bool = False,
         max_relative_target: float | None = None,
+        acceleration: int = 50,
     ) -> None:
         # 遅延 import: sim-only ユーザーが lerobot[feetech] の起動コストを
         # 払わないで済むよう、ここで初めて触る。
@@ -60,6 +64,14 @@ class RealBackend(RobotBase):
         )
         self._robot = SOFollower(cfg)
         self._robot.connect(calibrate=False)
+
+        # connect() 内の configure_motors() は Acceleration=254 (最大) をセット
+        # するので、安全のため即座に低い値で RAM を上書き。
+        # 注: 厳密には configure 内の torque-ON 直後〜ここの書き込みまでに
+        # 数 ms の窓があり、その間は 254 のまま。物理影響は無視できる短さ。
+        if acceleration is not None:
+            for motor in self._robot.bus.motors:
+                self._robot.bus.write("Acceleration", motor, acceleration)
 
         if not torque:
             self._robot.bus.disable_torque()
