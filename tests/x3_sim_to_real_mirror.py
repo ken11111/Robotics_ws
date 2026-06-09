@@ -81,11 +81,30 @@ def main() -> int:
         max_relative_target=args.max_step_deg,
     )
 
+    # --- 初期姿勢の同期 (初動スティクション対策) ---
+    # SOFollower.connect() は torque を強制 ON するが Goal_Position は前
+    # session の残骸のまま (LeRobot の挙動)。さらに P_Coefficient を 32→16
+    # に下げているので初動のトルクが弱め。これで stale Goal vs 現在 Present
+    # に差があると ID3 のように mech 抵抗のある関節で初動が出ない症状が出る。
+    #
+    # 対策:
+    # (a) 起動直後に Goal=Present で凍結 (= 即座に「保持」状態にする)
+    # (b) sim の qpos を real の現在角に合わせる
+    # (c) sin sweep を 0 ではなく real の現在角を中心に振る
+    # → どの関節も Goal が Present からスムーズに動き出す (dynamic_tracking
+    #    と同じ初動パターン) = 初動時のスティクション/トルク不足を回避
+    q_real_init = real.read_state()
+    real.apply_targets(q_real_init)  # (a) Goal=Present で凍結
+    sim.data.qpos[: real.ARM_DOF] = q_real_init  # (b) sim 側も合わせる
+    mujoco.mj_forward(sim.model, sim.data)
+    sweep_center = q_real_init.copy()  # (c) 中心はここに
+
     amp = np.deg2rad(args.amplitude_deg)
     omega = 2 * np.pi / args.period_s
     dt = 1.0 / args.rate_hz
 
-    print(f"  実機初期角 (deg): {np.round(np.rad2deg(real.read_state()), 1)}")
+    print(f"  実機初期角 (deg): {np.round(np.rad2deg(q_real_init), 1)}")
+    print(f"  sweep 中心 = この初期角、振幅 ±{args.amplitude_deg}°")
     print("  Ctrl+C / viewer の ✕ で終了")
 
     try:
@@ -94,8 +113,8 @@ def main() -> int:
             while viewer.is_running():
                 tloop = time.perf_counter()
                 t = tloop - t0
-                # 各関節を位相ずらしの sin で揺らす (rad)
-                q_target = np.array([
+                # sweep_center を中心に位相ずらしの sin で揺らす (rad)
+                q_target = sweep_center + np.array([
                     amp * np.sin(omega * t + i * np.pi / 3)
                     for i in range(6)
                 ])
